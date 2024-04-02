@@ -5,6 +5,7 @@ Reference: https://github.com/ANLGBOY/VAE-with-PyTorch
 import os
 import torch
 import torch.utils.data
+import matplotlib.pyplot as plt
 from model import VAE
 from utils import get_args, get_data_loaders, save_generated_img
 from train import train_model
@@ -60,10 +61,19 @@ def plot_along_axis(epoch):
 
 # --- main function --- #
 if __name__ == '__main__':
+    train_loss = []
+    test_loss = []
     for epoch in range(1, EPOCHS + 1):
-        train_model(model, train_loader, epoch, LEARNING_RATE, LOG_INTERVAL, device)
-        test_model(model, test_loader, epoch, BATCH_SIZE, device, result_dir)
+        loss_tr = train_model(model, train_loader, epoch, LEARNING_RATE, LOG_INTERVAL, device)
+        loss_test = test_model(model, test_loader, epoch, BATCH_SIZE, device, result_dir)
+        train_loss.append(loss_tr)
+        test_loss.append(loss_test)
         sample_from_model(epoch)
 
         if PRR:
             plot_along_axis(epoch)
+
+    plt.plot(train_loss, label='Train Loss')
+    plt.plot(test_loss, label='Test Loss')
+    plt.legend()
+    plt.show()

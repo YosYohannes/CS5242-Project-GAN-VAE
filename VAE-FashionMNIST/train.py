@@ -31,7 +31,6 @@ def train_model(model, train_loader, epoch, lr, log_interval, device):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100.*batch_idx / len(train_loader),
                 cur_loss/len(data)))
-
-    print('====> Epoch: {} Average loss: {:.4f}'.format(
-        epoch, train_loss / len(train_loader.dataset)
-    ))
+    train_loss = train_loss / len(train_loader.dataset)
+    print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss))
+    return train_loss

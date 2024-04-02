@@ -13,8 +13,10 @@ class VAE(nn.Module):
                                      nn.ReLU(),
                                      nn.Conv2d(128, 512, kernel_size=3, stride=2),
                                      nn.ReLU(),
+                                     nn.Conv2d(512, 512, kernel_size=3, stride=2),
+                                     nn.ReLU(),
                                      nn.Flatten(),
-                                     nn.Linear(18432, 500))
+                                     nn.Linear(2048, 500))
         self.mu = nn.Linear(500, z_dim)
         self.var = nn.Linear(500, z_dim)
         self.fc1 = nn.Linear(z_dim, 500)

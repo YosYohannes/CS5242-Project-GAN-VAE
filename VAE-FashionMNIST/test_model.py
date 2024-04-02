@@ -21,3 +21,4 @@ def test_model(model, test_loader, epoch, batch_size, device, result_dir):
 
     test_loss /= len(test_loader.dataset)
     print('====> Test set loss: {:.4f}'.format(test_loss))
+    return test_loss

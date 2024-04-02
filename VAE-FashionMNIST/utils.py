@@ -12,13 +12,13 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=128,
                         help='batch size for training (default: 128)')
     parser.add_argument('--epochs', type=int, default=50,
-                        help='number of epochs to train (default: 20)')
+                        help='number of epochs to train (default: 50)')
     parser.add_argument('--z-dim', type=int, default=2,
                         help='dimension of hidden variable Z (default: 2)')
     parser.add_argument('--log-interval', type=int, default=100,
                         help='interval between logs about training status (default: 100)')
-    parser.add_argument('--learning-rate', type=int, default=1e-3,
-                        help='learning rate for Adam optimizer (default: 1e-3)')
+    parser.add_argument('--learning-rate', type=int, default=1e-2,
+                        help='learning rate for Adam optimizer (default: 5e-3)')
     parser.add_argument('--prr', type=bool, default=True,
                         help='Boolean for plot-reproduce-result (default: True')
     parser.add_argument('--prr-z1-range', type=int, default=2,
