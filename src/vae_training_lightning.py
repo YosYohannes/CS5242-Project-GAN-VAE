@@ -6,6 +6,9 @@ from tqdm import tqdm
 from models.CelebVariationalAutoencoder import CelebVariationalAutoencoder
 from utils.FaceDataset import FaceDataset
 
+from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+
 import lightning as pl
 
 num_epochs = 50
@@ -49,6 +52,8 @@ class CelebVAE(pl.LightningModule):
         self.lr = lr
         self.loss = vae_loss
 
+        self.save_hyperparameters(ignore=["model"])
+
     def forward(self, data):
         return self.model(data)
     
@@ -70,11 +75,32 @@ class CelebVAE(pl.LightningModule):
     
 net = CelebVAE(model=model, lr=lr)
 
+tblogger = TensorBoardLogger("tb_logs", name="vae_celeba")
+csvlogger = CSVLogger("csv_logs", name="vae_celeba_csv")
+
+checkpoint_callback = ModelCheckpoint(
+    save_top_k=1,
+    monitor="val_loss",
+    mode="min",
+    filename="{epoch:02d}_{val_loss:.1f}",
+)
+
+# earlystopping_callback = EarlyStopping(
+#     monitor = "val_loss",
+#     min_delta = 0.05,  # use a reasonable value for your training
+#     patience = 3,  # set check_val_every_n_epoch in Trainer
+#     mode = "max",  # we are monitoring accuracy so choose "max"
+# )
+
 trainer = pl.Trainer(
     max_epochs = num_epochs,
     accelerator = 'auto',
     devices = 1,
-    gradient_clip_val = 0.25, gradient_clip_algorithm = "norm"
+    gradient_clip_val = 0.25, gradient_clip_algorithm = "norm",
+    logger = (tblogger, csvlogger),
+    log_every_n_steps=50,
+    callbacks=[checkpoint_callback],
+    check_val_every_n_epoch=1
 )
 
 trainer.fit(
