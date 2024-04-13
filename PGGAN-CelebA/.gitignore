@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+
+*.jpg
+*.png
+*.jpeg
+*.npy
+log.txt
+
+/results/
+/models/pretrain/
+/models/custom_classifier/
+/data/
+!/boundaries/*.npy
