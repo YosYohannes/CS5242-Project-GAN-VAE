@@ -116,7 +116,7 @@ def main():
                     val_loss += loss
             total_samples = len(val_loader.dataset)
         print(f'Validation loss = {val_loss / total_samples}, acc = {total_correct / total_samples}')
-        torch.save(model.state_dict(), os.path.join(PATH_DIR, f'resnet_18_{args.attribute}_e_{epoch}_acc_{(total_correct / total_samples):.4f}.pth'))
+        torch.save(model.state_dict(), os.path.join(PATH_DIR, f'resnet18_{args.attribute}_e_{epoch}_acc_{(total_correct / total_samples):.4f}.pth'))
 
     # Final test
     with tqdm(test_loader, unit="batch") as tepoch:
