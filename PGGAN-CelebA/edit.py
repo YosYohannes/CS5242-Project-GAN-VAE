@@ -29,6 +29,8 @@ def parse_args():
   parser.add_argument('-i', '--input_latent_codes_path', type=str, default='',
                       help='If specified, will load latent codes from given '
                            'path instead of randomly sampling. (optional)')
+  parser.add_argument('-c', '--condition', type=str, default='',
+                      help='Conditional arguement for boundary (optional)')
   parser.add_argument('-n', '--num', type=int, default=1,
                       help='Number of images for editing. This field will be '
                            'ignored if `input_latent_codes_path` is specified. '
@@ -49,6 +51,10 @@ def main():
   """Main function."""
   args = parse_args()
   output_dir = os.path.join(args.output_dir, args.attribute)
+  if args.condition != '':
+    output_dir = os.path.join(args.output_dir, args.attribute, args.condition)
+  if os.path.exists(output_dir):
+    output_dir = output_dir + '1'
   logger = setup_logger(output_dir, logger_name='generate_data')
 
   logger.info(f'Initializing generator.')
@@ -57,6 +63,8 @@ def main():
 
   logger.info(f'Preparing boundary.')
   boundary_path = os.path.join('boundaries', f'pggan_celebahq_{args.attribute}_boundary.npy')
+  if args.condition != '':
+    boundary_path = os.path.join('boundaries', f'pggan_celebahq_{args.attribute}_c_{args.condition}_boundary.npy')
   if not os.path.isfile(boundary_path):
     raise ValueError(f'Boundary `{boundary_path}` does not exist!')
   boundary = np.load(boundary_path)
