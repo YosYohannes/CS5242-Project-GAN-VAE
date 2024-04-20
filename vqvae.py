@@ -122,8 +122,6 @@ def main(args):
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
-    # transform back to correct values for display
-    fixed_images = transforms.ToPILImage()(fixed_images)
     fixed_grid = make_grid(fixed_images, nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('original', fixed_grid, 0)
 
@@ -132,8 +130,6 @@ def main(args):
 
     # Generate the samples first once
     reconstruction = generate_samples(fixed_images, model, args)
-    # transform to correct values for display
-    reconstruction = transforms.ToPILImage()(reconstruction)
     grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('reconstruction', grid, 0)
 
@@ -143,8 +139,6 @@ def main(args):
         loss, _ = test(valid_loader, model, args, writer)
 
         reconstruction = generate_samples(fixed_images, model, args)
-        # transform to correct values for display
-        reconstruction = transforms.ToPILImage()(reconstruction)
         grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
         writer.add_image('reconstruction', grid, epoch + 1)
 
