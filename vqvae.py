@@ -5,7 +5,8 @@ from torchvision import transforms, datasets
 from torchvision.utils import save_image, make_grid
 
 from modules import VectorQuantizedVAE, to_scalar
-from datasets import MiniImagenet
+from datasets import Afhq
+
 
 from tensorboardX import SummaryWriter
 
@@ -88,19 +89,24 @@ def main(args):
                 train=False, transform=transform)
             num_channels = 3
         valid_dataset = test_dataset
-    elif args.dataset == 'miniimagenet':
-        transform = transforms.Compose([
-            transforms.RandomResizedCrop(128),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
-        # Define the train, valid & test datasets
-        train_dataset = MiniImagenet(args.data_folder, train=True,
-            download=True, transform=transform)
-        valid_dataset = MiniImagenet(args.data_folder, valid=True,
-            download=True, transform=transform)
-        test_dataset = MiniImagenet(args.data_folder, test=True,
-            download=True, transform=transform)
+    # elif args.dataset == 'miniimagenet':
+    #     transform = transforms.Compose([
+    #         transforms.RandomResizedCrop(128),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    #     ])
+    #     # Define the train, valid & test datasets
+    #     train_dataset = MiniImagenet(args.data_folder, train=True,
+    #         download=True, transform=transform)
+    #     valid_dataset = MiniImagenet(args.data_folder, valid=True,
+    #         download=True, transform=transform)
+    #     test_dataset = MiniImagenet(args.data_folder, test=True,
+    #         download=True, transform=transform)
+    #     num_channels = 3
+    elif args.dataset == 'AFHQ':
+        train_dataset = Afhq(train=True)
+        valid_dataset = Afhq(val=True)
+        test_dataset = valid_dataset
         num_channels = 3
 
     # Define the data loaders
@@ -115,7 +121,7 @@ def main(args):
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
-    fixed_grid = make_grid(fixed_images, nrow=8, range=(-1, 1), normalize=True)
+    fixed_grid = make_grid(fixed_images, nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('original', fixed_grid, 0)
 
     model = VectorQuantizedVAE(num_channels, args.hidden_size, args.k).to(args.device)
@@ -123,7 +129,7 @@ def main(args):
 
     # Generate the samples first once
     reconstruction = generate_samples(fixed_images, model, args)
-    grid = make_grid(reconstruction.cpu(), nrow=8, range=(-1, 1), normalize=True)
+    grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('reconstruction', grid, 0)
 
     best_loss = -1.
@@ -132,7 +138,7 @@ def main(args):
         loss, _ = test(valid_loader, model, args, writer)
 
         reconstruction = generate_samples(fixed_images, model, args)
-        grid = make_grid(reconstruction.cpu(), nrow=8, range=(-1, 1), normalize=True)
+        grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
         writer.add_image('reconstruction', grid, epoch + 1)
 
         if (epoch == 0) or (loss < best_loss):
@@ -176,7 +182,7 @@ if __name__ == '__main__':
         help='name of the output folder (default: vqvae)')
     parser.add_argument('--num-workers', type=int, default=mp.cpu_count() - 1,
         help='number of workers for trajectories sampling (default: {0})'.format(mp.cpu_count() - 1))
-    parser.add_argument('--device', type=str, default='cpu',
+    parser.add_argument('--device', type=str, default='cuda',
         help='set the device (cpu or cuda, default: cpu)')
 
     args = parser.parse_args()
