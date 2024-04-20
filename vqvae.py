@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms, datasets
 from torchvision.utils import save_image, make_grid
+from torchvision.transforms import transforms
 
 from modules import VectorQuantizedVAE, to_scalar
 from datasets import Afhq
@@ -121,6 +122,8 @@ def main(args):
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
+    # transform back to correct values for display
+    fixed_images = transforms.ToPILImage()(fixed_images)
     fixed_grid = make_grid(fixed_images, nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('original', fixed_grid, 0)
 
@@ -129,6 +132,8 @@ def main(args):
 
     # Generate the samples first once
     reconstruction = generate_samples(fixed_images, model, args)
+    # transform to correct values for display
+    reconstruction = transforms.ToPILImage()(reconstruction)
     grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('reconstruction', grid, 0)
 
@@ -138,15 +143,18 @@ def main(args):
         loss, _ = test(valid_loader, model, args, writer)
 
         reconstruction = generate_samples(fixed_images, model, args)
+        # transform to correct values for display
+        reconstruction = transforms.ToPILImage()(reconstruction)
         grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
         writer.add_image('reconstruction', grid, epoch + 1)
 
         if (epoch == 0) or (loss < best_loss):
             best_loss = loss
-            with open('{0}/best.pt'.format(save_filename), 'wb') as f:
+            with open('{0}/best_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:
                 torch.save(model.state_dict(), f)
-        with open('{0}/model_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:
-            torch.save(model.state_dict(), f)
+        if (epoch + 1) % 5 == 0:
+            with open('{0}/model_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:
+                torch.save(model.state_dict(), f)
 
 if __name__ == '__main__':
     import argparse
