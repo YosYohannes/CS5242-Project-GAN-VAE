@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+
+checkpoints/
+
+# Editor
+.vscode/
+
+# Operations
+outputs/
+steps/
+
+# Files
+output.png
+steps.mp4
