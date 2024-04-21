@@ -120,6 +120,9 @@ def main(args):
     test_loader = torch.utils.data.DataLoader(test_dataset,
         batch_size=16, shuffle=False)
 
+    # For reproducibility
+    torch.manual_seed(1111)
+
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
     fixed_grid = make_grid(fixed_images, nrow=8, value_range=(0, 1), normalize=True)
