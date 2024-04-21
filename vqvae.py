@@ -112,17 +112,23 @@ def main(args):
 
     # Define the data loaders
     train_loader = torch.utils.data.DataLoader(train_dataset,
-        batch_size=args.batch_size, shuffle=False,
+        batch_size=args.batch_size, shuffle=True,
         num_workers=args.num_workers, pin_memory=True)
     valid_loader = torch.utils.data.DataLoader(valid_dataset,
         batch_size=args.batch_size, shuffle=False, drop_last=True,
         num_workers=args.num_workers, pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_dataset,
-        batch_size=16, shuffle=True)
+        batch_size=16, shuffle=False)
+
+    # Log hyperparameters
+    # convert argparse Namespace to dictionary
+    args_dict = vars(args)
+    for key, val in args_dict:
+        writer.add_scalar(key, val)
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
-    fixed_grid = make_grid(fixed_images, nrow=8, value_range=(-1, 1), normalize=True)
+    fixed_grid = make_grid(fixed_images, nrow=8, value_range=(0, 1), normalize=True)
     writer.add_image('original', fixed_grid, 0)
 
     model = VectorQuantizedVAE(num_channels, args.hidden_size, args.k).to(args.device)
@@ -130,7 +136,7 @@ def main(args):
 
     # Generate the samples first once
     reconstruction = generate_samples(fixed_images, model, args)
-    grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
+    grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(0, 1), normalize=True)
     writer.add_image('reconstruction', grid, 0)
 
     best_loss = -1.
@@ -139,16 +145,18 @@ def main(args):
         loss, _ = test(valid_loader, model, args, writer)
 
         reconstruction = generate_samples(fixed_images, model, args)
-        grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
+        grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(0, 1), normalize=True)
         writer.add_image('reconstruction', grid, epoch + 1)
 
         if (epoch == 0) or (loss < best_loss):
             best_loss = loss
-            with open('{0}/best_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:
+            with open('{0}/best.pt'.format(save_filename), 'wb') as f:
                 torch.save(model.state_dict(), f)
         if (epoch + 1) % 5 == 0:
             with open('{0}/model_{1}.pt'.format(save_filename, epoch + 1), 'wb') as f:
                 torch.save(model.state_dict(), f)
+    
+    writer.close()
 
 if __name__ == '__main__':
     import argparse
