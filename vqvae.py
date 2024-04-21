@@ -120,12 +120,6 @@ def main(args):
     test_loader = torch.utils.data.DataLoader(test_dataset,
         batch_size=16, shuffle=False)
 
-    # Log hyperparameters
-    # convert argparse Namespace to dictionary
-    args_dict = vars(args)
-    for key, val in args_dict:
-        writer.add_scalar(key, val)
-
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
     fixed_grid = make_grid(fixed_images, nrow=8, value_range=(0, 1), normalize=True)
