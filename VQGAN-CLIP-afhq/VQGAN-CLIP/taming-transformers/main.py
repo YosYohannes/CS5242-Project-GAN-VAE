@@ -420,6 +420,7 @@ if __name__ == "__main__":
         trainer_config = lightning_config.get("trainer", OmegaConf.create())
         # default to ddp
         trainer_config["distributed_backend"] = "ddp"
+        # trainer_config["distributed_backend"] = None
         for k in nondefault_trainer_args(opt):
             trainer_config[k] = getattr(opt, k)
         if not "gpus" in trainer_config:
@@ -555,9 +556,9 @@ if __name__ == "__main__":
             if trainer.global_rank == 0:
                 import pudb; pudb.set_trace()
 
-        import signal
-        signal.signal(signal.SIGUSR1, melk)
-        signal.signal(signal.SIGUSR2, divein)
+        # import signal
+        # signal.signal(signal.SIGUSR1, melk)
+        # signal.signal(signal.SIGUSR2, divein)
 
         # run
         if opt.train:
