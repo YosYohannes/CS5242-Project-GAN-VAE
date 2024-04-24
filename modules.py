@@ -161,7 +161,7 @@ class GatedActivation(nn.Module):
 
 
 class GatedMaskedConv2d(nn.Module):
-    def __init__(self, mask_type, dim, kernel, residual=True, n_classes=10):
+    def __init__(self, mask_type, dim, kernel, residual=True, n_classes=3):
         super().__init__()
         assert kernel % 2 == 1, print("Kernel size must be odd")
         self.mask_type = mask_type
@@ -218,7 +218,7 @@ class GatedMaskedConv2d(nn.Module):
 
 
 class GatedPixelCNN(nn.Module):
-    def __init__(self, input_dim=256, dim=64, n_layers=15, n_classes=10):
+    def __init__(self, input_dim=256, dim=64, n_layers=15, n_classes=3):
         super().__init__()
         self.dim = dim
 
@@ -259,7 +259,7 @@ class GatedPixelCNN(nn.Module):
 
         return self.output_conv(x_h)
 
-    def generate(self, label, shape=(8, 8), batch_size=64):
+    def generate(self, label, shape=(32, 32), batch_size=24):
         param = next(self.parameters())
         x = torch.zeros(
             (batch_size, *shape),
