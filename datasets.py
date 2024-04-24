@@ -5,7 +5,7 @@ from PIL import Image
 
 
 class Afhq(Dataset):
-    def __init__(self, train=None, val=None, root_dir='./data/afhq', transforms=transforms.ToTensor()):
+    def __init__(self, train=None, val=None, root_dir='./data/afhq', transform=None):
         assert not (train and val), "Specify only train or val but not both"
         assert train or val, "Specify train or val"
         if train:
@@ -14,7 +14,7 @@ class Afhq(Dataset):
             self.root_dir = root_dir + '/val'
         self.classes = sorted(os.listdir(self.root_dir))
 
-        self.transforms = transforms
+        self.transform = transform
 
         self.images, self.labels = [], []
 
@@ -34,7 +34,7 @@ class Afhq(Dataset):
         label = self.labels[idx]
 
         image = Image.open(image_path).convert('RGB')
-
-        image = self.transforms(image)
+        if self.transform is not None:
+            image = self.transform(image)
         
         return image, label

@@ -2,11 +2,11 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import json
-from torchvision import transforms
+from torchvision import transforms, datasets
 from torchvision.utils import save_image, make_grid
 
 from modules import VectorQuantizedVAE, GatedPixelCNN
-from datasets import MiniImagenet
+from datasets import Afhq
 
 from tensorboardX import SummaryWriter
 
@@ -84,34 +84,47 @@ def main(args):
                 train=False, transform=transform)
             num_channels = 3
         valid_dataset = test_dataset
-    elif args.dataset == 'miniimagenet':
+    # elif args.dataset == 'miniimagenet':
+    #     transform = transforms.Compose([
+    #         transforms.RandomResizedCrop(128),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    #     ])
+    #     # Define the train, valid & test datasets
+    #     train_dataset = MiniImagenet(args.data_folder, train=True,
+    #         download=True, transform=transform)
+    #     valid_dataset = MiniImagenet(args.data_folder, valid=True,
+    #         download=True, transform=transform)
+    #     test_dataset = MiniImagenet(args.data_folder, test=True,
+    #         download=True, transform=transform)
+    #     num_channels = 3
+    elif args.dataset == 'AFHQ':
         transform = transforms.Compose([
-            transforms.RandomResizedCrop(128),
+            transforms.Resize(128),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
-        # Define the train, valid & test datasets
-        train_dataset = MiniImagenet(args.data_folder, train=True,
-            download=True, transform=transform)
-        valid_dataset = MiniImagenet(args.data_folder, valid=True,
-            download=True, transform=transform)
-        test_dataset = MiniImagenet(args.data_folder, test=True,
-            download=True, transform=transform)
+        train_dataset = Afhq(train=True, transform=transform)
+        valid_dataset = Afhq(val=True, transform=transform)
+        test_dataset = valid_dataset
         num_channels = 3
 
     # Define the data loaders
     train_loader = torch.utils.data.DataLoader(train_dataset,
-        batch_size=args.batch_size, shuffle=False,
+        batch_size=args.batch_size, shuffle=True,
         num_workers=args.num_workers, pin_memory=True)
     valid_loader = torch.utils.data.DataLoader(valid_dataset,
         batch_size=args.batch_size, shuffle=False, drop_last=True,
         num_workers=args.num_workers, pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_dataset,
-        batch_size=16, shuffle=True)
+        batch_size=24, shuffle=True)
 
     # Save the label encoder
-    with open('./models/{0}/labels.json'.format(args.output_folder), 'w') as f:
-        json.dump(train_dataset._label_encoder, f)
+    # with open('./models/{0}/labels.json'.format(args.output_folder), 'w') as f:
+    #     json.dump(train_dataset._label_encoder, f)
+
+    # For reproducibility
+    torch.manual_seed(1111)
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
@@ -125,16 +138,23 @@ def main(args):
     model.eval()
 
     prior = GatedPixelCNN(args.k, args.hidden_size_prior,
-        args.num_layers, n_classes=len(train_dataset._label_encoder)).to(args.device)
+#        args.num_layers, n_classes=len(train_dataset._label_encoder)).to(args.device)
+        args.num_layers, n_classes=3).to(args.device)
     optimizer = torch.optim.Adam(prior.parameters(), lr=args.lr)
 
     best_loss = -1.
     for epoch in range(args.num_epochs):
         train(train_loader, model, prior, optimizer, args, writer)
-        # The validation loss is not properly computed since
-        # the classes in the train and valid splits of Mini-Imagenet
-        # do not overlap.
         loss = test(valid_loader, model, prior, args, writer)
+
+        latents = prior.generate(torch.LongTensor([0,0,0,0,0,0,0,0, \
+                                                    1,1,1,1,1,1,1,1, \
+                                                    2,2,2,2,2,2,2,2,]).cuda())
+
+        samps = model.decode(latents)
+
+        grid = make_grid(samps, nrow=8, range=(-1, 1), normalize=True)
+        writer.add_image('fakes', grid, epoch + 1)
 
         if (epoch == 0) or (loss < best_loss):
             best_loss = loss
@@ -179,7 +199,7 @@ if __name__ == '__main__':
         help='name of the output folder (default: prior)')
     parser.add_argument('--num-workers', type=int, default=mp.cpu_count() - 1,
         help='number of workers for trajectories sampling (default: {0})'.format(mp.cpu_count() - 1))
-    parser.add_argument('--device', type=str, default='cpu',
+    parser.add_argument('--device', type=str, default='cuda',
         help='set the device (cpu or cuda, default: cpu)')
 
     args = parser.parse_args()

@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms, datasets
 from torchvision.utils import save_image, make_grid
-from torchvision.transforms import transforms
 
 from modules import VectorQuantizedVAE, to_scalar
 from datasets import Afhq
@@ -105,8 +104,18 @@ def main(args):
     #         download=True, transform=transform)
     #     num_channels = 3
     elif args.dataset == 'AFHQ':
-        train_dataset = Afhq(train=True)
-        valid_dataset = Afhq(val=True)
+        transform_train = transforms.Compose([
+            transforms.RandomResizedCrop(128, scale=(0.9,1.0), ratio=(0.9,1.1)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        transform_val = transforms.Compose([
+            transforms.Resize(128),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        train_dataset = Afhq(train=True, transform=transform_train)
+        valid_dataset = Afhq(val=True, transform=transform_val)
         test_dataset = valid_dataset
         num_channels = 3
 
@@ -118,14 +127,14 @@ def main(args):
         batch_size=args.batch_size, shuffle=False, drop_last=True,
         num_workers=args.num_workers, pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_dataset,
-        batch_size=16, shuffle=False)
+        batch_size=16, shuffle=True)
 
     # For reproducibility
     torch.manual_seed(1111)
 
     # Fixed images for Tensorboard
     fixed_images, _ = next(iter(test_loader))
-    fixed_grid = make_grid(fixed_images, nrow=8, value_range=(0, 1), normalize=True)
+    fixed_grid = make_grid(fixed_images, nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('original', fixed_grid, 0)
 
     model = VectorQuantizedVAE(num_channels, args.hidden_size, args.k).to(args.device)
@@ -133,7 +142,7 @@ def main(args):
 
     # Generate the samples first once
     reconstruction = generate_samples(fixed_images, model, args)
-    grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(0, 1), normalize=True)
+    grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
     writer.add_image('reconstruction', grid, 0)
 
     best_loss = -1.
@@ -142,7 +151,7 @@ def main(args):
         loss, _ = test(valid_loader, model, args, writer)
 
         reconstruction = generate_samples(fixed_images, model, args)
-        grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(0, 1), normalize=True)
+        grid = make_grid(reconstruction.cpu(), nrow=8, value_range=(-1, 1), normalize=True)
         writer.add_image('reconstruction', grid, epoch + 1)
 
         if (epoch == 0) or (loss < best_loss):
