@@ -419,8 +419,8 @@ if __name__ == "__main__":
         # merge trainer cli with config
         trainer_config = lightning_config.get("trainer", OmegaConf.create())
         # default to ddp
-        trainer_config["distributed_backend"] = "ddp"
-        # trainer_config["distributed_backend"] = None
+        # trainer_config["distributed_backend"] = "ddp"
+        trainer_config["distributed_backend"] = None
         for k in nondefault_trainer_args(opt):
             trainer_config[k] = getattr(opt, k)
         if not "gpus" in trainer_config:
