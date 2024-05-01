@@ -8,14 +8,14 @@ This repo references the following:
 
 ### Training VQ-VAE with AFHQ
 Run the following to train VQ-VAE:
-'''
+```
 python vqvae.py --dataset AFHQ --batch-size 128 --output-folder [path/to/output] --num-epochs 500 --beta 0.25
-'''
+```
 
 Run the following to train PixelCNN prior:
-'''
+```
 python pixelcnn_prior.py --dataset AFHQ --model [path/to/vq-vae/checkpoint] --output-folder [path/to/output] --num-epochs 500 --batch-size 128
-'''
+```
 
 ### Training Custom VQGAN
 To train VQGAN on custom `afhq` dataset go into `VQGAN-CLIP/taming-transformer` and read `Training on custom data`. Data pointer `train.txt` and `test.txt` has been added, pointing to `afhq` dataset. And `custom_vqgan.yaml` has been edited. There was a deprection of some sort with `from torch._six import string_classes` which was fixed. I had issues running with `trainer_config["distributed_backend"] = "ddp"` but was able to run it `trainer_config["distributed_backend"] = None`.
